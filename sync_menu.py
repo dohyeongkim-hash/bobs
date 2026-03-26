@@ -7,7 +7,7 @@ from slack_sdk.errors import SlackApiError
 # GitHub Secrets에서 토큰을 가져옵니다.
 SLACK_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 # 채널 ID는 직접 입력하시거나, 이것도 Secret에 넣으셨다면 os.environ.get("CHANNEL_ID")로 바꾸세요.
-CHANNEL_ID = "여기에_채널_ID_입력" 
+CHANNEL_ID = "C0ANHM7CKFV" 
 
 def get_megabobs_menu():
     url = "https://www.megabobs.com/"
