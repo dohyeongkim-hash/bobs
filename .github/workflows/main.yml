@@ -1,0 +1,22 @@
+name: Daily Menu Sync
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # 매일 한국 시간 오전 9시
+  workflow_dispatch: # 직접 실행해볼 수 있는 버튼 생성
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run script
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }} # Secrets 불러오기
+        run: python sync_menu.py
