@@ -52,46 +52,4 @@ def get_megabobs_menu():
         daily_items = [m for m in menus if m.get('date') == today_str]
         
         if not daily_items:
-            return f"📅 {today_str}일자 메뉴가 아직 등록되지 않았습니다."
-
-        # 5. 슬랙 메시지 예쁘게 만들기 (칼로리 추가 완료!)
-        res_msg = f"🍱 *{today_str} 메가존 구내식당 메뉴*\n"
-        res_msg += "━━━━━━━━━━━━━━━━━━━━\n"
-        
-        category_map = {
-            "COURSE_1": "🔵 *코스 1 (한식)*",
-            "COURSE_2": "🔴 *코스 2 (일식/양식)*",
-            "TAKE_OUT": "🛍️ *테이크아웃*"
-        }
-
-        for cat_key, cat_name in category_map.items():
-            menu_data = next((m for m in daily_items if m['category'] == cat_key), None)
-            if menu_data:
-                # ⭐️ 이 부분이 수정되었습니다! (메뉴명 + 칼로리)
-                food_list = [f"{item['name']} ({item['kcal']}kcal)" for item in menu_data.get('items', [])]
-                res_msg += f"{cat_name}\n> {', '.join(food_list)}\n\n"
-            else:
-                res_msg += f"{cat_name}\n> 오늘은 운영하지 않아요.\n\n"
-        
-        return res_msg
-
-    except Exception as e:
-        return f"❌ 메뉴 분석 중 알 수 없는 에러 발생: {str(e)}"
-
-def send_to_slack(message):
-    if not SLACK_TOKEN: 
-        print("🚨 SLACK_BOT_TOKEN 환경변수가 비어있습니다!")
-        return
-        
-    client = WebClient(token=SLACK_TOKEN)
-    try:
-        client.chat_postMessage(channel=CHANNEL_ID, text=message)
-        print("✅ 슬랙 메시지 전송 완벽하게 성공!")
-    except SlackApiError as e:
-        print(f"🚨 [슬랙 API 에러 발생]: {e.response['error']}")
-
-if __name__ == "__main__":
-    print("🚀 메뉴 크롤러 작동 시작...")
-    menu_info = get_megabobs_menu()
-    print("📝 크롤링 결과:\n", menu_info)
-    send_to_slack(menu_info)
+            return f"📅 {today_str}일자 메뉴가 아직 등록
