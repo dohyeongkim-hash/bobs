@@ -5,6 +5,7 @@ from datetime import datetime
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
+# 🚨 GitHub Actions Secret에 SLACK_BOT_TOKEN이 잘 들어있는지 꼭 확인하세요!
 SLACK_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 CHANNEL_ID = "C0ANHM7CKFV" 
 
@@ -17,7 +18,7 @@ def get_megabobs_menu():
         response.encoding = 'utf-8'
         html = response.text
         
-        # 1. 지저분한 이스케이프 문자(\")부터 깔끔하게 일반 따옴표(")로 정리
+        # 1. 지저분한 이스케이프 문자 정리
         cleaned_html = html.replace('\\"', '"').replace('\\\\', '\\')
         
         # 2. "menus":[ 시작점 찾기
@@ -30,30 +31,24 @@ def get_megabobs_menu():
             start_idx = cleaned_html.find(start_keyword)
             
         if start_idx == -1:
-            return "❌ 메뉴 데이터를 찾을 수 없습니다. (사이트 구조 변경 가능성)"
+            return "❌ 메뉴 데이터를 찾을 수 없습니다. (웹사이트 구조가 변경되었을 수 있습니다.)"
 
-        # 3. '[' 가 시작되는 정확한 위치부터 괄호 짝 맞추기 (정규식의 한계 극복!)
-        array_start_idx = start_idx + len(start_keyword) - 1  # '[' 의 인덱스
-        sub_str = cleaned_html[array_start_idx:]
+        # 3. 무식하지만 100% 확실한 파싱 (뒤에서부터 ']'를 찾아가며 에러 안 날 때까지 파싱 시도)
+        array_str = cleaned_html[start_idx + len(start_keyword) - 1:]
+        menus = None
         
-        bracket_count = 0
-        end_idx = 0
-        
-        for i, char in enumerate(sub_str):
-            if char == '[':
-                bracket_count += 1
-            elif char == ']':
-                bracket_count -= 1
-            
-            # 대괄호가 열렸다가 완전히 다 닫히면(0) 그곳이 전체 JSON 배열의 끝!
-            if bracket_count == 0 and i > 0:
-                end_idx = i + 1
-                break
-        
-        # 완벽하게 잘라낸 JSON 문자열
-        json_str = sub_str[:end_idx]
-        menus = json.loads(json_str) # 🎉 이제 파싱 에러 안 납니다!
-        
+        for i in range(len(array_str), 0, -1):
+            if array_str[i-1] == ']':
+                try:
+                    # 완벽한 JSON 배열이 되는 지점에서 성공하고 루프 탈출!
+                    menus = json.loads(array_str[:i])
+                    break 
+                except json.JSONDecodeError:
+                    continue
+                    
+        if not menus:
+            return "❌ JSON 메뉴 데이터를 파싱하는 데 실패했습니다. 데이터 형식이 이상합니다."
+
         # 4. 오늘 날짜 메뉴 필터링
         today_str = datetime.now().strftime("%Y-%m-%d")
         daily_items = [m for m in menus if m.get('date') == today_str]
@@ -82,6 +77,22 @@ def get_megabobs_menu():
         return res_msg
 
     except Exception as e:
-        return f"❌ 메뉴 분석 실패: {str(e)}"
+        return f"❌ 메뉴 분석 중 알 수 없는 에러 발생: {str(e)}"
 
-# 기존 send_to_slack 함수와 실행부는 그대로 유지
+def send_to_slack(message):
+    if not SLACK_TOKEN: 
+        print("🚨 [치명적 에러] SLACK_BOT_TOKEN 환경변수가 비어있습니다! 토큰 설정을 다시 확인해주세요.")
+        return
+        
+    client = WebClient(token=SLACK_TOKEN)
+    try:
+        client.chat_postMessage(channel=CHANNEL_ID, text=message)
+        print("✅ 슬랙 메시지 전송 완벽하게 성공!")
+    except SlackApiError as e:
+        print(f"🚨 [슬랙 API 에러 발생]: {e.response['error']}")
+
+if __name__ == "__main__":
+    print("🚀 메뉴 크롤러 작동 시작...")
+    menu_info = get_megabobs_menu()
+    print("📝 크롤링 결과:\n", menu_info)
+    send_to_slack(menu_info)
