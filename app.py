@@ -7,7 +7,7 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 
 # 🚨 대화형 봇은 2개의 토큰이 필요합니다!
 SLACK_BOT_TOKEN = os.environ.get("xoxb-7969192954980-10772129863138-gNByWPS3GTXuz4zbBcvGOFkA") # xoxb- 로 시작하는 토큰
-SLACK_APP_TOKEN = os.environ.get("xapp-1-A0ANTLSMBJ8-10766228424231-37847f5b0606d7118a5b1a1d2b1971c5a400b1d2fd5110b2b69397e2cf945d8e") # xapp- 으로 시작하는 토큰 (Socket Mode용)
+SLACK_APP_TOKEN = os.environ.get("") # xapp- 으로 시작하는 토큰 (Socket Mode용)
 
 app = App(token=SLACK_BOT_TOKEN)
 
