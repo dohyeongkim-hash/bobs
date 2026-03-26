@@ -26,28 +26,26 @@ def get_megabobs_menu():
         start_idx = cleaned_html.find(start_keyword)
         
         if start_idx == -1:
-            # 띄어쓰기가 있을 경우를 대비해 한 번 더 체크
             start_keyword = '"menus": ['
             start_idx = cleaned_html.find(start_keyword)
             
         if start_idx == -1:
-            return "❌ 메뉴 데이터를 찾을 수 없습니다. (웹사이트 구조가 변경되었을 수 있습니다.)"
+            return "❌ 메뉴 데이터를 찾을 수 없습니다."
 
-        # 3. 무식하지만 100% 확실한 파싱 (뒤에서부터 ']'를 찾아가며 에러 안 날 때까지 파싱 시도)
+        # 3. 확실한 파싱 (뒤에서부터 ']'를 찾아가며 에러 안 날 때까지 파싱 시도)
         array_str = cleaned_html[start_idx + len(start_keyword) - 1:]
         menus = None
         
         for i in range(len(array_str), 0, -1):
             if array_str[i-1] == ']':
                 try:
-                    # 완벽한 JSON 배열이 되는 지점에서 성공하고 루프 탈출!
                     menus = json.loads(array_str[:i])
                     break 
                 except json.JSONDecodeError:
                     continue
                     
         if not menus:
-            return "❌ JSON 메뉴 데이터를 파싱하는 데 실패했습니다. 데이터 형식이 이상합니다."
+            return "❌ JSON 메뉴 데이터를 파싱하는 데 실패했습니다."
 
         # 4. 오늘 날짜 메뉴 필터링
         today_str = datetime.now().strftime("%Y-%m-%d")
@@ -56,7 +54,7 @@ def get_megabobs_menu():
         if not daily_items:
             return f"📅 {today_str}일자 메뉴가 아직 등록되지 않았습니다."
 
-        # 5. 슬랙 메시지 예쁘게 만들기
+        # 5. 슬랙 메시지 예쁘게 만들기 (칼로리 추가 완료!)
         res_msg = f"🍱 *{today_str} 메가존 구내식당 메뉴*\n"
         res_msg += "━━━━━━━━━━━━━━━━━━━━\n"
         
@@ -69,7 +67,8 @@ def get_megabobs_menu():
         for cat_key, cat_name in category_map.items():
             menu_data = next((m for m in daily_items if m['category'] == cat_key), None)
             if menu_data:
-                food_list = [item['name'] for item in menu_data.get('items', [])]
+                # ⭐️ 이 부분이 수정되었습니다! (메뉴명 + 칼로리)
+                food_list = [f"{item['name']} ({item['kcal']}kcal)" for item in menu_data.get('items', [])]
                 res_msg += f"{cat_name}\n> {', '.join(food_list)}\n\n"
             else:
                 res_msg += f"{cat_name}\n> 오늘은 운영하지 않아요.\n\n"
@@ -81,7 +80,7 @@ def get_megabobs_menu():
 
 def send_to_slack(message):
     if not SLACK_TOKEN: 
-        print("🚨 [치명적 에러] SLACK_BOT_TOKEN 환경변수가 비어있습니다! 토큰 설정을 다시 확인해주세요.")
+        print("🚨 SLACK_BOT_TOKEN 환경변수가 비어있습니다!")
         return
         
     client = WebClient(token=SLACK_TOKEN)
